@@ -1,0 +1,17 @@
+; /etc/bind/db.losangeles.internal  -- zona del proyecto (ZONA NUEVA: no toque las de los laboratorios)
+; IP de ejemplo = servidor del curso (192.168.50.1). Si en la integracion cambia, cambie TODAS las A.
+; Cada vez que edite este archivo, SUBA el serial.
+$TTL 604800
+@    IN SOA ns1.losangeles.internal. admin.losangeles.internal. (
+              1         ; Serial
+         604800         ; Refresh
+          86400         ; Retry
+        2419200         ; Expire
+         604800 )       ; Negative Cache TTL
+;
+@            IN NS    ns1.losangeles.internal.
+ns1          IN A     192.168.50.1
+@            IN A     192.168.50.1
+capacitacion IN A     192.168.50.1
+ftp          IN A     192.168.50.1
+www          IN CNAME capacitacion.losangeles.internal.
