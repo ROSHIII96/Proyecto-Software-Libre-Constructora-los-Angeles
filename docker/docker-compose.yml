@@ -1,0 +1,78 @@
+# Proyecto EIF431O - Constructora Los Angeles - Chamilo LMS
+# Ejecutar SIEMPRE desde esta carpeta (donde esta este archivo y el .env):
+#   docker compose up -d --build              (primer arranque: UNA sola replica)
+#   docker compose up -d --scale chamilo=2    (despues de instalar: dos replicas)
+name: chamilo
+
+services:
+  # ---------- Base de datos ----------
+  bd:
+    image: mariadb:11.8
+    restart: unless-stopped
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?defina MARIADB_ROOT_PASSWORD en .env}
+      MARIADB_DATABASE: ${DB_NAME:?defina DB_NAME en .env}
+      MARIADB_USER: ${DB_USER:?defina DB_USER en .env}
+      MARIADB_PASSWORD: ${DB_PASS:?defina DB_PASS en .env}
+      TZ: America/Costa_Rica
+    volumes:
+      - datos_bd:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Sin "ports": solo los contenedores de esta red llegan a la base.
+
+  # ---------- Aplicacion (se escala con --scale chamilo=2) ----------
+  chamilo:
+    build:
+      context: ./chamilo
+      args:
+        PHP_VERSION: ${PHP_VERSION:-8.3}
+        CHAMILO_URL: ${CHAMILO_URL:?defina CHAMILO_URL en .env}
+        CHAMILO_SHA256: ${CHAMILO_SHA256:?defina CHAMILO_SHA256 en .env}
+    image: chamilo-app:${CHAMILO_VERSION:-1.11.40}-php${PHP_VERSION:-8.3}
+    restart: unless-stopped
+    environment:
+      TZ: America/Costa_Rica
+    depends_on:
+      bd:
+        condition: service_healthy
+    volumes:
+      - chamilo_app:/var/www/html        # codigo + configuracion + cursos + archivos subidos
+      - chamilo_sesiones:/sessions       # sesiones PHP compartidas entre replicas
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1/"]
+      start_period: 40s
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    # Sin "ports": solo el balanceador llega a las replicas.
+
+  # ---------- Balanceador (reparte entre las replicas vivas) ----------
+  balanceador:
+    image: nginx:1.30-alpine
+    restart: unless-stopped
+    depends_on:
+      chamilo:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8081:80"              # solo Apache (en el mismo servidor) llega aqui
+    volumes:
+      - ./balanceador/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/salud"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  datos_bd:
+    name: chamilo_datos_bd
+  chamilo_app:
+    name: chamilo_app
+  chamilo_sesiones:
+    name: chamilo_sesiones

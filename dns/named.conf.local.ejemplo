@@ -1,0 +1,5 @@
+// Agregar AL FINAL de /etc/bind/named.conf.local (no borre las zonas anteriores)
+zone "losangeles.internal" {
+    type master;
+    file "/etc/bind/db.losangeles.internal";
+};
