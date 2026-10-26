@@ -1,0 +1,13 @@
+$TTL    604800
+@       IN      SOA     ns1.losangeles.internal. admin.losangeles.internal. (
+                              2         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      ns1.losangeles.internal.
+ns1     IN      A       192.168.50.1
+@       IN      A       192.168.50.1
+capacitacion IN A       192.168.50.1
+www     IN      CNAME   capacitacion.losangeles.internal.
