@@ -1,20 +1,145 @@
-# Versiones fijadas (todos usamos EXACTAMENTE estas)
-Cambiar una versión requiere avisar a los cinco y anotarlo en `decisiones.md`.
+# Versiones utilizadas en el proyecto
 
-| Componente | Versión | Dónde se fija | Estado |
+Las versiones principales del proyecto deben mantenerse estables entre los integrantes.
+
+Si se cambia una versión importante, el cambio debe comunicarse al equipo y registrarse en `docs/decisiones.md`.
+
+| Componente | Versión utilizada | Dónde se define o verifica | Estado |
 |---|---|---|---|
-| Ubuntu Server | 24.04 LTS en el curso; servidor del Integrante 2: 26.04 LTS | VM | cada integrante anota la suya |
-| Docker Engine / Compose | Docker 29.9.2 / Compose v5.6.0 (servidor Int. 2) | `docker version`, `docker compose version` | anotado 25/10/2026 |
-| Git | 2.53.0 (servidor Int. 2) | `git --version` | anotado 25/10/2026 |
-| Chamilo | 1.11.40 (24/06/2026, estable) | `docker/.env` (`CHAMILO_VERSION`, `CHAMILO_URL`, `CHAMILO_SHA256`) | fijado, ver abajo |
-| PHP | 8.3 (`php:8.3-apache`) — plan B: 7.4 | `PHP_VERSION` en `.env` | resultado de la prueba de humo: pendiente |
-| MariaDB | `mariadb:11.8` — plan B: `mariadb:10.11` | `docker-compose.yml` | resultado de la prueba de humo: pendiente |
-| nginx (balanceador) | `nginx:1.30-alpine` | `docker-compose.yml` | curso |
-| Apache / BIND9 / vsftpd (servidor) | paquetes de Ubuntu del servidor de cada integrante | apt | anotar `apache2 -v`, `named -v`, `vsftpd -v`: pendiente |
+| Ubuntu Server | Según VM del integrante / servidor definitivo | `lsb_release -a` | verificar en servidor definitivo |
+| Docker Engine | Versión instalada en el servidor | `docker version` | funcionando |
+| Docker Compose | Versión instalada en el servidor | `docker compose version` | funcionando |
+| Git | Versión instalada en el servidor | `git --version` | funcionando |
+| Chamilo LMS | 1.11.40 | `docker/.env` | probado y funcionando |
+| PHP | 8.3 | imagen utilizada para Chamilo | probado y funcionando |
+| MariaDB | 11.8 | `docker-compose.yml` | probado y funcionando |
+| nginx balanceador | 1.30-alpine | `docker-compose.yml` | probado y funcionando |
+| Nginx del servidor | paquete instalado mediante APT | `nginx -v` | arquitectura final |
+| BIND9 | paquete instalado mediante APT | `named -v` | utilizado para DNS |
+| vsftpd | paquete instalado mediante APT | `vsftpd -v` | probado y funcionando |
+| OpenSSH Server | paquete instalado mediante APT | `sshd -V` / paquete instalado | utilizado para administración y respaldos |
+| rsync | paquete del sistema | `rsync --version` | probado y funcionando |
 
-Nunca `latest`.
+## Imágenes principales de Docker
 
-## Valores de Chamilo (Integrante 2, 25/10/2026)
-- CHAMILO_URL: https://github.com/chamilo/chamilo-lms/releases/download/v1.11.40/chamilo-1.11.40.zip
-- CHAMILO_SHA256: 1cf4bf2cc7bae1ef1a1eff643235db1d552f78ddf4b6dd1e2d2dac9868679439
-- Verificado con `sha256sum` tras descargar el ZIP (402 MB), coincide con el publicado en GitHub.
+### MariaDB
+
+Imagen utilizada:
+
+mariadb:11.8
+
+MariaDB almacena la información de Chamilo en el volumen persistente:
+
+chamilo_datos_bd
+
+Durante las pruebas de restauración se recuperaron correctamente 239 tablas.
+
+### nginx
+
+Imagen utilizada para el balanceador:
+
+nginx:1.30-alpine
+
+El balanceador distribuye las solicitudes hacia las réplicas de Chamilo.
+
+El puerto debe publicarse únicamente en:
+
+127.0.0.1:8081
+
+### Chamilo
+
+Versión utilizada:
+
+1.11.40
+
+Fecha de la versión utilizada:
+
+24/06/2026
+
+Archivo utilizado:
+
+chamilo-1.11.40.zip
+
+URL de descarga configurada en el proyecto:
+
+https://github.com/chamilo/chamilo-lms/releases/download/v1.11.40/chamilo-1.11.40.zip
+
+SHA-256 registrado:
+
+1cf4bf2cc7bae1ef1a1eff643235db1d552f78ddf4b6dd1e2d2dac9868679439
+
+El archivo fue verificado previamente mediante:
+
+sha256sum
+
+## Versiones alternativas consideradas
+
+Durante el desarrollo se contemplaron algunas alternativas en caso de problemas de compatibilidad.
+
+PHP:
+
+8.3
+
+Alternativa considerada:
+
+7.4
+
+MariaDB:
+
+11.8
+
+Alternativa considerada:
+
+10.11
+
+Las alternativas no fueron necesarias porque las versiones principales funcionaron correctamente durante las pruebas.
+
+## Política de versiones
+
+No utilizar imágenes con la etiqueta:
+
+latest
+
+Las versiones deben escribirse explícitamente en `docker-compose.yml`, `.env` o los archivos correspondientes.
+
+Esto permite que todos los integrantes trabajen con versiones conocidas y reduce el riesgo de que una actualización automática rompa el proyecto.
+
+## Comandos para comprobar versiones
+
+Docker:
+
+docker version
+
+Docker Compose:
+
+docker compose version
+
+Git:
+
+git --version
+
+Nginx:
+
+nginx -v
+
+BIND9:
+
+named -v
+
+vsftpd:
+
+vsftpd -v
+
+rsync:
+
+rsync --version
+
+Sistema operativo:
+
+lsb_release -a
+
+## Nota
+
+Las versiones de paquetes instalados mediante APT pueden variar ligeramente según la versión de Ubuntu utilizada.
+
+Antes de la entrega final se recomienda ejecutar los comandos anteriores en el servidor definitivo y registrar las versiones exactas utilizadas.

@@ -373,66 +373,142 @@ Resultado:
 HTTP/1.1 200 OK
 
 Esto demostró que Chamilo pudo recuperarse después de eliminar completamente sus datos persistentes.
+## 14.1 Prueba de restauración por punto en el tiempo
 
+Para comprobar que el respaldo realmente devuelve el sistema al estado del momento en que fue creado, se realizó una prueba con dos usuarios.
+
+Primero se creó:
+
+respaldo_a
+
+Se comprobó su existencia en MariaDB.
+
+Luego se generó un nuevo respaldo:
+
+chamilo-bd-2026-10-31_0501.sql.gz
+
+y su correspondiente respaldo de archivos.
+
+Después del respaldo se creó:
+
+respaldo_b
+
+Antes de realizar la restauración existían ambos usuarios:
+
+respaldo_a
+
+respaldo_b
+
+Después se eliminaron los volúmenes de prueba:
+
+cd ~/proyecto-eif431o/docker
+
+docker compose down -v
+
+Se volvió a levantar MariaDB:
+
+docker compose up -d bd
+
+Se esperó hasta que MariaDB apareciera healthy:
+
+docker compose ps
+
+Luego se restauró el respaldo creado después de respaldo_a y antes de respaldo_b:
+
+cd ~/proyecto-eif431o
+
+./backups/restaurar.sh ~/respaldos/chamilo-bd-2026-10-31_0501.sql.gz
+
+Después se restauraron los archivos de Chamilo.
+
+Al verificar nuevamente la base de datos se obtuvo:
+
+respaldo_a
+
+El usuario respaldo_b ya no apareció.
+
+También se comprobaron:
+
+239 tablas
+
+y:
+
+HTTP/1.1 200 OK
+
+Esto demuestra que la restauración regresó correctamente al estado existente en el momento exacto del respaldo.
 ---
 
 ## 15. Copia externa de los respaldos
 
-Se realizó una copia hacia una máquina Linux Mint.
+Se configuró una copia externa hacia una máquina Linux Mint.
 
-IP:
+IP de Mint:
 
 192.168.50.101
 
+Usuario:
+
+server
+
 En Mint se instaló SSH:
 
-sudo apt-get install -y openssh-server
+sudo apt update
+
+sudo apt install openssh-server -y
 
 sudo systemctl enable --now ssh
 
-sudo systemctl status ssh
+Para crear la carpeta destino:
 
-Para comprobar el puerto:
+mkdir -p ~/respaldos-losangeles
 
-sudo ss -ltnp | grep :22
+Desde el servidor principal se creó una clave exclusiva para la automatización:
 
-Desde el servidor:
+ssh-keygen -t ed25519 -f ~/.ssh/respaldo_cron_ed25519 -N ""
 
-ssh -i ~/.ssh/respaldo_ed25519 mint@192.168.50.101
+La clave pública se copió hacia Mint:
 
-Si la clave del host había cambiado:
+ssh-copy-id -i ~/.ssh/respaldo_cron_ed25519.pub server@192.168.50.101
 
-ssh-keygen -f '/home/server/.ssh/known_hosts' -R '192.168.50.101'
+Se comprobó que el acceso funciona sin contraseña:
 
-Para copiar la clave pública:
+ssh -o BatchMode=yes -i ~/.ssh/respaldo_cron_ed25519 server@192.168.50.101 'echo "SSH AUTOMATICO OK"'
 
-ssh-copy-id -i ~/.ssh/respaldo_ed25519.pub mint@192.168.50.101
+Resultado:
 
-Para copiar los respaldos:
+SSH AUTOMATICO OK
 
-rsync -av -e "ssh -i ~/.ssh/respaldo_ed25519" ~/respaldos/ mint@192.168.50.101:~/respaldos-losangeles/
+Para realizar una copia manual:
 
----
+rsync -av -e "ssh -i ~/.ssh/respaldo_cron_ed25519" ~/respaldos/ server@192.168.50.101:~/respaldos-losangeles/
 
-## 16. Verificación de la copia externa
+## 16. Automatización de la copia externa
 
-En Mint:
+Después del respaldo local de las 02:30 se configuró una segunda tarea Cron.
+
+La copia externa se ejecuta diariamente a las 03:00:
+
+0 3 * * * /usr/bin/rsync -av -e "ssh -i $HOME/.ssh/respaldo_cron_ed25519" $HOME/respaldos/ server@192.168.50.101:~/respaldos-losangeles/ >> $HOME/respaldos/rsync.log 2>&1
+
+Para comprobar ambas tareas:
+
+crontab -l
+
+Las tareas finales son:
+
+30 2 * * * /usr/bin/flock -n /tmp/chamilo-respaldo.lock $HOME/proyecto-eif431o/backups/respaldar.sh >> $HOME/respaldos/cron.log 2>&1
+
+0 3 * * * /usr/bin/rsync -av -e "ssh -i $HOME/.ssh/respaldo_cron_ed25519" $HOME/respaldos/ server@192.168.50.101:~/respaldos-losangeles/ >> $HOME/respaldos/rsync.log 2>&1
+
+## 16.1 Verificación de la copia externa
+
+En Linux Mint:
 
 ls -lh ~/respaldos-losangeles/
 
-Para comprobar específicamente los respaldos utilizados:
+Se comprobó que los respaldos llegaron correctamente a la máquina externa.
 
-ls -lh ~/respaldos-losangeles/chamilo-bd-2026-10-30_0624.sql.gz
-
-ls -lh ~/respaldos-losangeles/chamilo-archivos-2026-10-30_0624.tar.gz
-
-Se comprobó la existencia de:
-
-chamilo-bd-2026-10-30_0624.sql.gz
-
-chamilo-archivos-2026-10-30_0624.tar.gz
-
-La copia externa protege los datos ante una pérdida completa de la VM o del disco principal.
+La copia externa permite recuperar la plataforma incluso si se pierde completamente la VM principal..
 
 ---
 
@@ -482,7 +558,7 @@ Resultado esperado:
 
 127.0.0.1:8081->80/tcp
 
-Esto permite que únicamente el servidor acceda directamente al balanceador y que Apache funcione como punto de entrada.
+Esto permite que únicamente el servidor acceda directamente al balanceador y que Nginx funcione como punto de entrada HTTPS.
 
 ---
 
