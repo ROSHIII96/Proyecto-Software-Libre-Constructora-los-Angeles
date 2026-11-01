@@ -20,7 +20,7 @@ sudo cp /etc/vsftpd.conf /etc/vsftpd.conf.original
 
 Editar el archivo:
 
-sudo nano /etc/vsftpd.conf
+sudo cp ~/proyecto-eif431o/ftp/vsftpd.conf /etc/vsftpd.conf
 
 Asegurarse de tener las siguientes opciones:
 
@@ -107,7 +107,7 @@ getent passwd ftp_int1 ftp_int2 ftp_int3 ftp_int4 ftp_int5 ftp_instructor
 
 También se pueden revisar los directorios:
 
-ls -ld /home/ftp_int*
+ls -ld /home/ftp_int\*
 
 Cada usuario debe tener su propio directorio.
 
