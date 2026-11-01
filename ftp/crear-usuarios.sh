@@ -1,11 +1,13 @@
 #!/bin/bash
-# crear-usuarios.sh - crea una cuenta FTP por integrante (ftp_int1..5) y una por rol (ftp_instructor)
+# crear-usuarios.sh - crea cuentas FTP para los integrantes del proyecto
 # Uso: sudo ./crear-usuarios.sh
-# Las claves NO se escriben aqui: passwd las pide de forma interactiva.
-USUARIOS="ftp_int1 ftp_int2 ftp_int3 ftp_int4 ftp_int5 ftp_instructor"
+# Las claves NO se escriben aquí: passwd las pide de forma interactiva.
+
+USUARIOS="diego derek dixon joseth ivan"
 
 if [ "$(id -u)" -ne 0 ]; then
-  echo "Ejecute con sudo"; exit 1
+  echo "Ejecute con sudo"
+  exit 1
 fi
 
 for u in $USUARIOS; do
@@ -13,10 +15,24 @@ for u in $USUARIOS; do
     adduser --disabled-password --gecos "" "$u"
     echo "Defina la clave de $u:"
     passwd "$u"
+  else
+    echo "El usuario $u ya existe."
   fi
+
   mkdir -p "/home/$u/subida"
+
   chown "$u:$u" "/home/$u" "/home/$u/subida"
-  chmod 700 "/home/$u"            # nadie mas entra al home de este usuario
+
+  chmod 700 "/home/$u"
   chmod 755 "/home/$u/subida"
+
+  echo "Usuario $u configurado correctamente."
 done
-echo "Listo. Revise permisos con: ls -ld /home/ftp_*"
+
+echo
+echo "Listo. Revise los usuarios con:"
+echo "getent passwd diego derek dixon joseth ivan"
+
+echo
+echo "Revise los permisos con:"
+echo "ls -ld /home/diego /home/derek /home/dixon /home/joseth /home/ivan"
