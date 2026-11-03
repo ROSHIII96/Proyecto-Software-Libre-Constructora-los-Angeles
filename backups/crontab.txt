@@ -1,0 +1,5 @@
+# Agenda de respaldos. Se edita con:  crontab -e     (usuario normal, SIN sudo)
+# 1) PRUEBA: cada minuto. Verifique que aparecen archivos y luego COMENTE esta linea.
+# * * * * * $HOME/proyecto-eif431o/backups/respaldar.sh >> $HOME/respaldos/cron.log 2>&1
+# 2) REAL: todos los dias a las 2:30 (madrugada: nadie esta en capacitacion)
+30 2 * * * $HOME/proyecto-eif431o/backups/respaldar.sh >> $HOME/respaldos/cron.log 2>&1
