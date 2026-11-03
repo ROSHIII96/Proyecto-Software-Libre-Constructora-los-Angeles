@@ -164,3 +164,11 @@ Para que el navegador no advierta: copie `capacitacion.crt` a Mint e impórtelo 
 - **`502 Bad Gateway`:** el contenedor no está arriba o el puerto no coincide; pruebe `curl -I http://127.0.0.1:8081` en el servidor.
 - **Chamilo carga sin estilos o redirige a `http://`:** se instaló por una URL distinta de `https://capacitacion.losangeles.internal/`. La URL de instalación queda grabada (`root_web` en `app/config/configuration.php`); corríjala o reinstale por el dominio correcto.
 - **El navegador advierte del certificado:** es lo esperado con un certificado autofirmado.
+
+
+### Nota sobre subida de archivos grandes (100 MB)
+
+En la configuración del proxy inverso Nginx (`/etc/nginx/sites-available/capacitacion.conf`), se incluyeron las siguientes directivas:
+
+- `client_max_body_size 100m;` (permite subir instaladores/archivos de hasta 100 MB).
+- `proxy_read_timeout 300s;` (previene desconexiones durante subidas).
