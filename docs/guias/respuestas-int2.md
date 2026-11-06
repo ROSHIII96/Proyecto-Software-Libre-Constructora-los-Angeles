@@ -44,7 +44,7 @@ El host de la base es `bd` porque ese es el nombre del servicio dentro de la red
 | 4 | Subir un PDF y descargarlo | Pasó (Documento-Ejemplo.pdf, 9,9 KB, se abre bien) |
 | 5 | Lección de 3 pasos recorrida como estudiante | Pasó (barra al 100 %, también con la cuenta estudiante1) |
 | 6 | Ejercicio de 5 preguntas resuelto como estudiante | Pasó (administrador 6/7, estudiante1 7/7) |
-| 7 | Ver progreso y nota como profesor | Pasó (aparecen los dos intentos con su puntaje) |
+| 7 | Ver progreso y nota como profesor | Pasó (con la cuenta de Carlos: Ana Mora, usuario estudiante1, aparece con 100 %, aprobada, 1 intento; Luis y María, sin intentar) |
 | 8 | Logs sin errores fatal ni critical | Pasó (el `grep` no devolvió nada) |
 | 9 | Crear un usuario desde Administración | Pasó (Carlos Ramírez como Profesor y tres estudiantes) |
 
