@@ -40,4 +40,12 @@ COPY chamilo.ini /usr/local/etc/php/conf.d/chamilo.ini
 COPY chamilo-apache.conf /etc/apache2/conf-available/chamilo.conf
 RUN a2enconf chamilo
 
+# 5) Personalizacion y aprovisionamiento automatico del primer arranque:
+#    tema + logo + sembrar.php vienen de ../personalizacion (contexto adicional "personalizacion")
+COPY --from=personalizacion . /opt/personalizacion/
+COPY aprovisionar.sh /usr/local/bin/aprovisionar.sh
+RUN sed -i 's/\r$//' /usr/local/bin/aprovisionar.sh && chmod +x /usr/local/bin/aprovisionar.sh
+ENTRYPOINT ["/usr/local/bin/aprovisionar.sh"]
+CMD ["apache2-foreground"]
+
 EXPOSE 80
