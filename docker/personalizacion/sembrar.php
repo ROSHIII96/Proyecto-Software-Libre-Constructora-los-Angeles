@@ -16,6 +16,15 @@ $_SERVER['REQUEST_METHOD'] = 'GET';
 require_once '/var/www/html/main/inc/global.inc.php';
 require_once api_get_path(SYS_CODE_PATH).'inc/lib/fileUpload.lib.php';
 
+// Desde la consola no hay sesion web: Chamilo exige un usuario "autenticado" para registrar
+// quien crea cada documento/ejercicio, asi que se actua como el administrador.
+$admin = api_get_user_info_from_username(getenv('CHAMILO_ADMIN_USER') ?: 'admin');
+if (empty($admin['user_id'])) { echo "[ERROR] no existe el administrador\n"; exit(1); }
+$_user = ['user_id' => (int) $admin['user_id']];
+$_SESSION['_user'] = $_user;
+$_SESSION['is_platformAdmin'] = true;
+$_SESSION['_user']['status'] = PLATFORM_ADMIN;
+
 $errores = 0;
 function paso($nombre, callable $fn) {
     global $errores;

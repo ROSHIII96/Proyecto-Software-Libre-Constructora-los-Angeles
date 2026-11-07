@@ -81,7 +81,9 @@ aprovisionar() {
 
   # ---------- 3) Datos de ejemplo + tema activo ----------
   log "cargando datos de ejemplo"
-  if php /opt/personalizacion/sembrar.php >> "$LOG" 2>&1; then
+  php /opt/personalizacion/sembrar.php >> "$LOG" 2>&1; resultado=$?
+  chown -R www-data:www-data "$WEB/app/courses" "$WEB/app/cache" 2>/dev/null || true
+  if [ "$resultado" -eq 0 ]; then
     touch "$MARCA"
     log "aprovisionamiento completo"
   else
