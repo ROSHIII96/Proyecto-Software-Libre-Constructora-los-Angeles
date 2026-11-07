@@ -1,0 +1,104 @@
+¿A partir de qué diferencia de nivel se considera trabajo en altura?
+A. 0.50 metros
+B. 1.00 metro
+C. 1.50 metros
+D. 3.00 metros
+ANSWER: C
+
+¿Quién debe firmar el permiso de trabajo en altura antes de iniciar la labor?
+A. El trabajador que va a realizar la tarea
+B. El operador de la maquinaria
+C. El supervisor HSEQ
+D. El vigilante de la obra
+ANSWER: C
+
+¿Qué resistencia mínima debe certificar el punto de anclaje por cada trabajador conectado?
+A. 1,000 lbs
+B. 2,500 lbs
+C. 3,000 lbs
+D. 5,000 lbs (22.2 kN)
+ANSWER: D
+
+¿Qué debe tener un andamio para poder usarse?
+A. Tarjeta roja de "No usar"
+B. Tarjeta verde de "Apto para uso"
+C. Tarjeta amarilla de "Precaución"
+D. No requiere ninguna tarjeta
+ANSWER: B
+
+¿A qué altura debe estar la barandilla superior de un andamio?
+A. 0.50 m
+B. 1.00 m
+C. 1.50 m
+D. 2.00 m
+ANSWER: B
+
+¿Qué distancia mínima de seguridad se debe mantener con respecto al radio de giro o trabajo de la maquinaria pesada?
+A. 1 metro
+B. 2 metros
+C. 3 metros
+D. 10 metros
+ANSWER: C
+
+¿Qué significan las siglas del código PAS?
+A. Prevenir, Alertar, Salir
+B. Proteger, Avisar, Socorrer
+C. Parar, Atender, Seguir
+D. Proteger, Atender, Salir
+ANSWER: B
+
+Según la regla de oro, ¿qué se debe hacer con una persona lesionada por una caída de altura?
+A. Moverla de inmediato a un lugar cómodo
+B. Sentarla y darle agua
+C. No moverla, salvo que exista riesgo inminente de incendio o colapso
+D. Levantarla entre dos compañeros para llevarla al botiquín
+ANSWER: C
+
+¿Qué debe hacer al escuchar la sirena de alarma?
+A. Terminar la tarea que está haciendo antes de salir
+B. Evacuar en calma y dirigirse al Punto de Encuentro Principal
+C. Correr hacia la salida más cercana sin avisar a nadie
+D. Quedarse en su puesto hasta recibir una llamada
+ANSWER: B
+
+¿Cuáles son los tres elementos del triángulo del fuego?
+A. Combustible, oxígeno y calor
+B. Agua, aire y calor
+C. Madera, gas y chispa
+D. Combustible, humo y calor
+ANSWER: A
+
+¿Qué NO se debe usar para apagar un fuego de líquidos inflamables como gasolina o solventes?
+A. Polvo químico seco
+B. CO₂
+C. Agua
+D. Un extintor apto para clase B
+ANSWER: C
+
+En la técnica PASS para usar un extintor, ¿hacia dónde se debe apuntar?
+A. A la parte más alta de las llamas
+B. Al humo
+C. Al techo
+D. A la base de las llamas
+ANSWER: D
+
+¿Desde qué nivel de ruido continuo se requiere protección auditiva (tapones o concheras)?
+A. Más de 60 dB
+B. Más de 70 dB
+C. Más de 85 dB
+D. Solo si el ruido es molesto
+ANSWER: C
+
+¿Cómo se debe desenchufar una herramienta eléctrica antes de cambiar un accesorio?
+A. Tirando del cable
+B. Directamente desde la clavija, sin tirar del cable
+C. No hace falta desenchufarla
+D. Apagándola solo con el interruptor
+ANSWER: B
+
+¿Cuál de las siguientes afirmaciones sobre el "derecho a decir NO" es correcta?
+A. Solo los supervisores pueden detener una tarea
+B. El trabajador debe terminar la tarea y reportarla después
+C. Solo se puede detener una tarea con permiso de la gerencia
+D. Todo trabajador puede y debe detener una tarea si no hay condiciones de seguridad
+ANSWER: D
