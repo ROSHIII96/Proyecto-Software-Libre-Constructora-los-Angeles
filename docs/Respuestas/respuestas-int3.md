@@ -2,12 +2,6 @@
 
 Este archivo contiene únicamente los bloques y preguntas asignados al Integrante 3 en la guía del equipo. Los bloques 5, 6 y 7 requieren coordinación con otros integrantes, pero permanecen aquí porque el Integrante 3 debe explicar la relación de esas pruebas con la alta disponibilidad, el curso y la recuperación.
 
-Los compañeros documentan sus propios componentes en sus archivos:
-
-- Integrante 2: instalación, contenido base y prueba de Chamilo.
-- Integrante 4: MariaDB, persistencia y seguridad de datos.
-- Integrante 5: respaldos, restauración y copia externa.
-
 # Bloque 1 — Balanceador del laboratorio
 
 # Punto de control 1
@@ -57,7 +51,6 @@ Después de iniciar sesión en Chamilo se comprueba la sesión con:
 ¿Qué pasaría con un usuario conectado si cada réplica guardara sus sesiones en su propio disco? ¿Qué pasaría si cada una tuviera su propio volumen de archivos?
 
 El usuario podría perder la sesión al cambiar de réplica porque la segunda instancia no encontraría la cookie de sesión en su disco local. Si cada réplica tuviera sus propios archivos, una instancia podría no encontrar los cursos, documentos o archivos subidos desde la otra. Los volúmenes compartidos evitan ambos problemas.
-
 
 # Bloque 3 — Balanceo dinámico
 
@@ -176,9 +169,3 @@ La recuperación manual consiste en:
 Son manuales la preparación de la VM, la copia de los respaldos, la restauración, el cambio del DNS y la verificación final. Se podría automatizar con un script de recuperación, infraestructura reproducible, actualización controlada del DNS y monitoreo.
 
 Como máximo se perderían los cambios realizados después del respaldo utilizado. Ese intervalo corresponde al RPO medido para la copia restaurada.
-
----
-
-## Resumen del estado
-
-La configuración del integrante 3 ya contempla dos réplicas de Chamilo, volúmenes compartidos, balanceo dinámico y reintento ante fallos. Los puntos que todavía requieren evidencia ejecutada son las capturas de los bloques 1 a 7 y los tiempos reales de caída, recuperación, RTO y RPO.
