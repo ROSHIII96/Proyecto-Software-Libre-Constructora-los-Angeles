@@ -79,15 +79,37 @@ aprovisionar() {
     chown -R www-data:www-data "$WEB/web/css/themes" "$WEB/app/Resources/public/css/themes"
   fi
 
-  # ---------- 3) Datos de ejemplo + tema activo ----------
-  log "cargando datos de ejemplo"
-  php /opt/personalizacion/sembrar.php >> "$LOG" 2>&1; resultado=$?
+  # ---------- 3) Datos de ejemplo ----------
+  # Camino A (preferido): restaurar el respaldo real de la base (chamilo-bd.sql.gz), con usuarios, curso,
+  #                       lecciones, evaluacion e intentos de los estudiantes.
+  # Camino B (si no hay respaldo): crear los datos de ejemplo con sembrar.php.
+  resultado=0
+  if [ -f /opt/personalizacion/chamilo-bd.sql.gz ]; then
+    log "restaurando respaldo de la base (chamilo-bd.sql.gz)"
+    if gunzip -c /opt/personalizacion/chamilo-bd.sql.gz \
+         | mariadb --skip-ssl -h bd -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" >> "$LOG" 2>&1; then
+      log "base restaurada"
+      if [ -f /opt/personalizacion/curso-SEGOBRA.tar.gz ]; then
+        log "restaurando archivos del curso SEGOBRA"
+        mkdir -p "$WEB/app/courses"
+        tar xzf /opt/personalizacion/curso-SEGOBRA.tar.gz -C "$WEB/app/courses"
+      else
+        log "AVISO: no hay curso-SEGOBRA.tar.gz; el PDF y las paginas de las lecciones no tendran archivo (ver personalizacion/README.md)"
+      fi
+      php /opt/personalizacion/claves.php >> "$LOG" 2>&1 || resultado=1
+    else
+      log "ERROR restaurando la base"; resultado=1
+    fi
+  else
+    log "cargando datos de ejemplo (sembrar.php)"
+    php /opt/personalizacion/sembrar.php >> "$LOG" 2>&1; resultado=$?
+  fi
   chown -R www-data:www-data "$WEB/app/courses" "$WEB/app/cache" 2>/dev/null || true
   if [ "$resultado" -eq 0 ]; then
     touch "$MARCA"
     log "aprovisionamiento completo"
   else
-    log "ERROR en sembrar.php (ver log); se reintentara al reiniciar el contenedor"
+    log "ERROR en los datos de ejemplo (ver log); se reintentara al reiniciar el contenedor"
     return 1
   fi
 }

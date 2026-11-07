@@ -11,7 +11,7 @@ ARG CHAMILO_SHA256
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-        ca-certificates curl unzip \
+        ca-certificates curl unzip mariadb-client \
         libpng-dev libjpeg-dev libfreetype6-dev libicu-dev libzip-dev libxml2-dev; \
     docker-php-ext-configure gd --with-freetype --with-jpeg; \
     docker-php-ext-install -j"$(nproc)" gd intl zip pdo_mysql mysqli opcache soap; \
