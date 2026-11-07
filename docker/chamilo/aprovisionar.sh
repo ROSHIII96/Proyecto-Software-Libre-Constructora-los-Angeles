@@ -30,18 +30,12 @@ aprovisionar() {
   # ---------- 1) Instalacion ----------
   if [ ! -s "$CONF" ] || ! grep -q "root_web" "$CONF"; then
     log "Chamilo sin instalar: ejecutando instalador desatendido"
+    # El instalador usa valores por defecto salvo que la URL lleve ?running=1, y lee installType de la URL.
+    # Por eso se manda UNA sola peticion directa al paso 6 (instalacion) con todos los campos.
     COOKIES=$(mktemp)
-    curl -fsS -c "$COOKIES" -b "$COOKIES" -o /dev/null "$URL_LOCAL/main/install/index.php" || true
-    curl -fsS -c "$COOKIES" -b "$COOKIES" -o /dev/null "$URL_LOCAL/main/install/index.php" \
-      --data-urlencode "install=Nueva instalacion" --data-urlencode "step1=1" || true
-    curl -fsS -c "$COOKIES" -b "$COOKIES" -o /dev/null "$URL_LOCAL/main/install/index.php" \
-      --data-urlencode "installType=new" --data-urlencode "updateFromConfigFile=" \
-      --data-urlencode "step2_install=Nueva instalacion" || true
-    curl -fsS -c "$COOKIES" -b "$COOKIES" -o /dev/null "$URL_LOCAL/main/install/index.php" \
-      --data-urlencode "installType=new" --data-urlencode "updateFromConfigFile=" \
-      --data-urlencode "step2=Nuevo" --data-urlencode "step3=Siguiente" || true
-    curl -fsS -c "$COOKIES" -b "$COOKIES" -o "$WEB/app/instalador-salida.html" "$URL_LOCAL/main/install/index.php" \
-      --data-urlencode "installType=new" --data-urlencode "updateFromConfigFile=" \
+    curl -sS --max-time 900 -c "$COOKIES" -b "$COOKIES" -H "Accept-Language: es" \
+      -o "$WEB/app/instalador-salida.html" \
+      "$URL_LOCAL/main/install/index.php?running=1&installType=new&updateFromConfigFile=" \
       --data-urlencode "step6=Instalar" \
       --data-urlencode "dbHostForm=bd" \
       --data-urlencode "dbUsernameForm=${DB_USER}" \
