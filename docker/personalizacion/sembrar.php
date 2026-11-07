@@ -80,7 +80,14 @@ $curso = paso('curso SEGOBRA', function () use ($ids) {
 });
 if (!$curso) { echo "Sin curso no se puede continuar\n"; exit(1); }
 $code = $curso['code'];
-$cid  = $curso['real_id'];
+$cid  = (int) $curso['real_id'];
+
+// Registrar el curso en la sesion para que las clases internas (Exercise, Question, etc.)
+// conozcan el c_id cuando llaman a api_get_course_int_id().
+$_course = $curso;
+$_SESSION['_course'] = $curso;
+$_SESSION['_real_cid'] = $cid;
+$_SESSION['_cid'] = $code;
 
 paso('inscribir instructor y estudiantes', function () use ($ids, $code) {
     CourseManager::subscribeUser($ids['Instructor1'], $code, COURSEMANAGER);
@@ -174,6 +181,10 @@ paso('recurso PDF descargable', function () use ($curso) {
 
 // ---------- 6) Evaluacion de 5 preguntas ----------
 paso('evaluacion de 5 preguntas', function () use ($curso, $cid) {
+    $db = new mysqli('bd', getenv('DB_USER'), getenv('DB_PASS'), getenv('DB_NAME'));
+    // Limpiar ejercicios incompletos previos si hubo un reintento
+    $db->query("DELETE FROM c_quiz WHERE c_id = $cid AND title = 'Evaluacion: Seguridad en obra'");
+
     $preguntas = [
         ['Cual es la altura minima a partir de la cual se considera trabajo en alturas?',
             ['1,80 m', 'Mas de 5 m', 'Mas de 10 m', 'Solo en techos'], 0],
@@ -198,6 +209,7 @@ paso('evaluacion de 5 preguntas', function () use ($curso, $cid) {
 
     foreach ($preguntas as $i => $p) {
         $q = new UniqueAnswer();
+        $q->course = $curso;
         $q->updateTitle($p[0]);
         $q->updateType(UNIQUE_ANSWER);
         $q->updateWeighting(1);
@@ -208,7 +220,6 @@ paso('evaluacion de 5 preguntas', function () use ($curso, $cid) {
             $a->createAnswer($texto, $k === $p[2] ? 1 : 0, '', $k === $p[2] ? 1 : 0, $k + 1);
         }
         $a->save();
-        $ex->addToList($qid);
     }
     $ex->save();
 });
