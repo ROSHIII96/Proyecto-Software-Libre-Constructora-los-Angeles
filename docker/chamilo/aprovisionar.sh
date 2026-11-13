@@ -75,6 +75,9 @@ aprovisionar() {
     for destino in "$WEB/web/css/themes" "$WEB/app/Resources/public/css/themes"; do
       mkdir -p "$destino"
       unzip -qo /opt/personalizacion/losangeles-tema.zip -d "$destino"
+      if [ -f /opt/personalizacion/logo-los-angeles.png ]; then
+        cp -f /opt/personalizacion/logo-los-angeles.png "$destino/losangeles/images/header-logo.png"
+      fi
     done
     chown -R www-data:www-data "$WEB/web/css/themes" "$WEB/app/Resources/public/css/themes"
   fi
