@@ -55,15 +55,17 @@ cp .env.example .env
 
 5. Completar las variables del archivo `.env` sin subir credenciales al repositorio.
 
-6. Construir y levantar la plataforma:
+6. Construir y levantar la plataforma (primer arranque con una sola réplica):
 
 docker compose up -d --build
 
-7. Verificar los servicios:
+7. Verificar que finalice el aprovisionamiento automático de Chamilo (instalación, tema `losangeles`, curso `SEGOBRA` y usuarios):
+
+docker compose exec chamilo tail -f /var/www/html/app/aprovisionamiento.log
+
+8. Verificar los servicios:
 
 docker compose ps
-
-8. Instalar y configurar Chamilo.
 
 9. Para alta disponibilidad, levantar dos réplicas de Chamilo:
 

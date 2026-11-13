@@ -11,7 +11,7 @@ ARG CHAMILO_SHA256
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-        ca-certificates curl unzip \
+        ca-certificates curl unzip mariadb-client \
         libpng-dev libjpeg-dev libfreetype6-dev libicu-dev libzip-dev libxml2-dev; \
     docker-php-ext-configure gd --with-freetype --with-jpeg; \
     docker-php-ext-install -j"$(nproc)" gd intl zip pdo_mysql mysqli opcache soap; \
@@ -39,5 +39,13 @@ RUN mkdir -p /sessions && chown www-data:www-data /sessions && chmod 0770 /sessi
 COPY chamilo.ini /usr/local/etc/php/conf.d/chamilo.ini
 COPY chamilo-apache.conf /etc/apache2/conf-available/chamilo.conf
 RUN a2enconf chamilo
+
+# 5) Personalizacion y aprovisionamiento automatico del primer arranque:
+#    tema + logo + sembrar.php vienen de ../personalizacion (contexto adicional "personalizacion")
+COPY --from=personalizacion . /opt/personalizacion/
+COPY aprovisionar.sh /usr/local/bin/aprovisionar.sh
+RUN sed -i 's/\r$//' /usr/local/bin/aprovisionar.sh && chmod +x /usr/local/bin/aprovisionar.sh
+ENTRYPOINT ["/usr/local/bin/aprovisionar.sh"]
+CMD ["apache2-foreground"]
 
 EXPOSE 80

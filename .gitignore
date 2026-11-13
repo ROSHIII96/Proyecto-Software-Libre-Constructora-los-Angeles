@@ -2,6 +2,8 @@
 .env
 .env.*
 !.env.example
+Comandos\ de\ prueba.md
+/Comandos\ de\ prueba.md
 
 # Operating system files
 .DS_Store

@@ -30,6 +30,8 @@ services:
   chamilo:
     build:
       context: ./chamilo
+      additional_contexts:
+        personalizacion: ./personalizacion   # tema, logo y datos de ejemplo
       args:
         PHP_VERSION: ${PHP_VERSION:-8.3}
         CHAMILO_URL: ${CHAMILO_URL:?defina CHAMILO_URL en .env}
@@ -38,6 +40,15 @@ services:
     restart: unless-stopped
     environment:
       TZ: America/Costa_Rica
+      # Usados por aprovisionar.sh para instalar y sembrar Chamilo sin pasar por el navegador
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      CHAMILO_PORTAL_URL: ${CHAMILO_PORTAL_URL:-https://capacitacion.losangeles.internal/}
+      CHAMILO_ADMIN_USER: ${CHAMILO_ADMIN_USER:-admin}
+      CHAMILO_ADMIN_PASS: ${CHAMILO_ADMIN_PASS:?defina CHAMILO_ADMIN_PASS en .env}
+      CHAMILO_ADMIN_EMAIL: ${CHAMILO_ADMIN_EMAIL:-admin@losangeles.internal}
+      CHAMILO_DEMO_PASS: ${CHAMILO_DEMO_PASS:?defina CHAMILO_DEMO_PASS en .env}
     depends_on:
       bd:
         condition: service_healthy

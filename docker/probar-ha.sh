@@ -1,6 +1,5 @@
 #!/bin/bash
 # probar-ha.sh - una peticion por segundo; muestra hora, codigo HTTP y que replica respondio
-# Uso: ./probar-ha.sh [segundos]     (por defecto 60; Ctrl+C para terminar)
 # Sirve de evidencia: lo que aparece aqui es lo que ve un usuario mientras se detiene/arranca una replica.
 DOM="capacitacion.losangeles.internal"
 DUR="${1:-60}"

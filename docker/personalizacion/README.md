@@ -18,3 +18,18 @@ Sobrevive a `docker compose down` y a recrear los contenedores; se pierde con `d
 
 ## Cómo se hizo el tema
 Se descargó el tema `chamilo` desde la misma pantalla (botón Descargar), se copió a una carpeta `losangeles` y se cambiaron con `sed` los azules de `default.css` por los colores de la marca (barra de navegación, enlaces, menús abiertos y activos).
+
+
+## Despliegue automatico en una VM nueva (`docker compose up -d --build`)
+`chamilo/aprovisionar.sh` (entrypoint de la imagen) instala Chamilo sin navegador y deja todo listo. Archivos de esta carpeta que usa:
+- `losangeles-tema.zip` y `logo-los-angeles.png`: tema y logo (se descomprime al arrancar).
+- `chamilo-bd.sql.gz`: respaldo real de la base (usuarios, curso SEGOBRA, lecciones, evaluacion e intentos de los estudiantes). Si existe, se restaura; si no, se usa `sembrar.php` para crear datos de ejemplo.
+- `curso-SEGOBRA.tar.gz` (opcional pero necesario para ver el PDF y las paginas de las lecciones): los archivos del curso, porque la base solo guarda sus nombres. Se genera en el servidor que ya tiene el curso:
+  ```bash
+  docker run --rm -v chamilo_app:/datos:ro -v "$PWD":/out nginx:1.30-alpine \
+    tar czf /out/curso-SEGOBRA.tar.gz -C /datos/app/courses SEGOBRA
+  ```
+  y se copia a esta carpeta antes de hacer `git push`.
+- `claves.php`: despues de restaurar, pone las claves del `.env` (`CHAMILO_ADMIN_PASS`, `CHAMILO_DEMO_PASS`) a `admin`, `Instructor1` y `estudiante1/2/3`.
+
+El log del proceso queda en el contenedor: `app/aprovisionamiento.log`.
