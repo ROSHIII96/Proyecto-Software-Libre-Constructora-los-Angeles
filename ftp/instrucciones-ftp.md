@@ -82,7 +82,7 @@ Debe mostrar las opciones configuradas anteriormente.
 
 El proyecto incluye el script:
 
-ftp/crear-usuarios.sh
+sudo ftp/crear-usuarios.sh
 
 Ejecutarlo desde la raíz del proyecto:
 
