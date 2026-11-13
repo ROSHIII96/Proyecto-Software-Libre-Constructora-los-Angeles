@@ -117,7 +117,7 @@ Limitación aceptada: la alta disponibilidad cubre la aplicación, no al Nginx d
 - **Restauración probada** en una copia aislada (proyecto `prueba`, volúmenes `prueba_*`, puerto 8082): base en 83 s y archivos en 114 s. Se usaron dos usuarios marcadores: el creado antes del respaldo volvió y el creado después no, con 239 tablas recuperadas y HTTP 200.
 - Pérdida máxima aceptada: un día de cambios.
 
-Procedimientos: `docs/respaldos.md`, `docs/instrucciones-restauracion.md`.
+Procedimientos: `docs/respaldos.md`, `backups/instrucciones-respaldos-restauracion.md`.
 
 ## 7. Monitoreo y seguridad
 
@@ -193,11 +193,14 @@ Supuestos explícitos: el prototipo reutilizó equipos existentes (hardware adic
 
 | Qué se demuestra | Dónde está |
 |---|---|
-| Prueba de humo 9/9 y capturas | `docs/evidencias/int2/`, `docs/guias/respuestas-int2.md` |
+| Prueba de humo 9/9 y capturas | `docs/evidencias/int2/`, `docs/Respuestas/respuestas-int2.md` |
 | Alta disponibilidad (logs de `probar-ha.sh`) | `docs/evidencias/int2/` |
-| MariaDB: permisos, puertos, 239 tablas, monitoreo | `docs/evidencias/int4/`, `docs/guias/respuestas-int4.md`, `docs/monitoreo-bd.md` |
-| Respaldos, cron, copia externa, restauración | `docs/evidencias/int5/`, `docs/respaldos.md`, `docs/instrucciones-restauracion.md` |
-| FTP y aislamiento | `docs/instrucciones-ftp.md`, `docs/guias/respuestas-int5.md` |
+| MariaDB: permisos, puertos, 239 tablas, monitoreo | `docs/evidencias/int4/`, `docs/Respuestas/respuestas-int4.md`, `docs/monitoreo-bd.md` |
+| Respaldos, cron, copia externa, restauración | `docs/evidencias/int5/`, `docs/respaldos.md`, `backups/instrucciones-respaldos-restauracion.md` |
+| FTP y aislamiento | `ftp/instrucciones-ftp.md`, `docs/Respuestas/respuestas-int5.md` |
+| DNS y HTTPS (Int1) | `docs/Respuestas/Respuestas-Int-1.md` |
+| Réplicas y balanceador (Int3) | `docs/Respuestas/respuestas-int3.md`, `docs/evidencias/int 3/` |
+| Contenido del curso (lecciones, segundo parcial, PDF) | `contenido-curso/` |
 | Decisiones | `docs/decisiones.md` |
 | Versiones | `docs/versiones.md` |
 | Estado del servidor con fecha y huellas SHA-256 | `evidencias/estado-servidor.txt`, `hashes.txt` (carpeta de entrega) |
