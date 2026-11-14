@@ -1,0 +1,3 @@
+# Agenda de sincronizacion externa en Linux Mint (crontab -e)
+# Trae respaldos desde Ubuntu Server (192.168.50.1) usando clave SSH dedicada y flock
+* * * * * flock -n /tmp/rsync-mint.lock rsync -az -e "ssh -i $HOME/.ssh/id_respaldos" joseth@192.168.50.1:respaldos/ /home/joseth/respaldos-losangeles/ >> /home/joseth/respaldos-losangeles/rsync.log 2>&1
