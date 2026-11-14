@@ -1,288 +1,249 @@
-# Instrucciones de respaldos y restauración
+# Guía paso a paso: respaldos, Cron, copia externa (SSH + rsync) y restauración
 
-# Proyecto Constructora Los Ángeles — Chamilo LMS
+**Servidor Ubuntu:** `192.168.50.1` | **Linux Mint (copia externa):** `192.168.50.101`
 
-Esta guía explica cómo **crear, comprobar y restaurar** respaldos de la base de datos MariaDB y de los archivos persistentes de Chamilo mediante los scripts del proyecto.
+> **Advertencia:** La restauración sobrescribe datos actuales. Haz pruebas destructivas (`docker compose down -v`) **solo en un entorno de pruebas**.
 
-**Equipo:** Integrante 5 (respaldos), con apoyo del Integrante 4 (base de datos).
+## 1. Preparación inicial (Ubuntu Server)
 
-> **Advertencia:** La restauración puede sobrescribir información actual. Realice las pruebas destructivas **solo en una máquina de pruebas**. No ejecute `docker compose down -v` en el servidor definitivo, porque puede eliminar los datos persistentes.
+Requisitos: Docker funcionando, repositorio en `~/proyecto-eif431o`, contenedores levantados y SSH activo (`SSH/Instalar.md`).
 
-## 1. Requisitos previos
-
-Antes de crear un respaldo deben existir:
-
-- Ubuntu Server con Docker Engine y Docker Compose funcionando.
-- Proyecto ubicado en `~/proyecto-eif431o`.
-- Servicios Docker `bd`, `chamilo` y `balanceador` configurados.
-- Instalación de Chamilo con datos para respaldar.
-- Scripts `backups/respaldar.sh`, `backups/restaurar.sh` y `backups/restaurar-archivos.sh` incluidos en el repositorio.
-
-Comprobar los servicios desde el **servidor principal**:
+Comprobar servicios y dar permisos a los scripts:
 
 ```bash
 cd ~/proyecto-eif431o/docker
 docker compose ps
 ```
 
-La base de datos `bd` y Chamilo deben encontrarse operativos, idealmente en estado `healthy`.
-
-## 2. ¿Qué hace cada script?
-
-| Script | Función | Archivo utilizado |
-|---|---|---|
-| `backups/respaldar.sh` | Genera respaldos de MariaDB y del volumen persistente `chamilo_app`. | Produce `.sql.gz` y `.tar.gz` |
-| `backups/restaurar.sh` | Importa en MariaDB el contenido de un respaldo SQL comprimido. | Lee `.sql.gz` |
-| `backups/restaurar-archivos.sh` | Recupera los archivos persistentes de Chamilo en su volumen Docker. | Lee `.tar.gz` |
-
-**Diferencia:** la base de datos contiene usuarios, cursos, inscripciones y demás registros; el volumen de archivos contiene documentos y otros archivos persistentes. Para recuperar la plataforma es necesario considerar **ambas partes**.
-
-## 3. Crear los respaldos por primera vez
-
-Desde **Ubuntu Server**, entrar al proyecto y dar permisos al script:
+*(Los servicios `bd` y `chamilo` deben estar en `healthy`).*
 
 ```bash
 cd ~/proyecto-eif431o
-chmod +x backups/respaldar.sh
+chmod +x backups/respaldar.sh backups/respaldar-bd.sh backups/restaurar.sh backups/restaurar-archivos.sh
 ```
 
-Ejecutar el respaldo manual:
+---
+
+## 2. Crear y verificar el respaldo manual (Ubuntu Server)
+
+Ejecutar **con tu usuario normal (sin `sudo`)**:
 
 ```bash
+cd ~/proyecto-eif431o
 ./backups/respaldar.sh
-```
-
-El script genera los respaldos en:
-
-```text
-~/respaldos/
-```
-
-Se esperan dos archivos con la **misma fecha y hora**, por ejemplo (nombres ilustrativos):
-
-```text
-chamilo-bd-AAAA-MM-DD_HHMM.sql.gz
-chamilo-archivos-AAAA-MM-DD_HHMM.tar.gz
-```
-
-Para ver los nombres reales:
-
-```bash
 ls -lh ~/respaldos/
+tail -n 10 ~/respaldos/respaldo.log
 ```
 
-Para ver el registro de respaldo:
+*(Si solo necesitas una prueba rápida de base de datos en ~2 segundos, puedes usar `./backups/respaldar-bd.sh`).*
 
-```bash
-tail -n 20 ~/respaldos/respaldo.log
-```
+Deben aparecer dos archivos con la misma fecha/hora (`chamilo-bd-AAAA-MM-DD_HHMM.sql.gz` y `chamilo-archivos-AAAA-MM-DD_HHMM.tar.gz`) y líneas `OK BD` / `OK ARCHIVOS` en el log. `respaldar.sh` conserva los últimos 7 días en Ubuntu.
 
-**Importante:** compruebe que ambos archivos existen y que el script terminó sin errores antes de continuar.
-
-## 4. Verificar integridad de los respaldos
-
-Seleccione los **nombres reales** que aparezcan en `ls -lh ~/respaldos/` y sustitúyalos en los comandos siguientes.
-
-Comprobar la compresión del respaldo de la base:
+Validar integridad sustituyendo los nombres reales:
 
 ```bash
 gzip -t ~/respaldos/NOMBRE-REAL-BD.sql.gz && echo "BD OK"
-```
-
-Comprobar la compresión y lectura del respaldo de archivos:
-
-```bash
 tar -tzf ~/respaldos/NOMBRE-REAL-ARCHIVOS.tar.gz > /dev/null && echo "ARCHIVOS OK"
 ```
 
-Si aparece `BD OK` y `ARCHIVOS OK`, los archivos pasaron la **comprobación básica de integridad**. Esto no sustituye una restauración de prueba.
+---
 
-## 5. Preparar la restauración
+## 3. Automatizar respaldos con Cron (Ubuntu Server)
 
-> **Antes de restaurar:** confirme que eligió el par correcto de respaldos y que cuenta con una copia segura de cualquier dato actual que deba conservar. No restaure un respaldo antiguo directamente sobre una instancia que tiene información nueva importante.
-
-Entrar al directorio Docker:
+Verificar `cron` y `flock`:
 
 ```bash
-cd ~/proyecto-eif431o/docker
+systemctl is-active cron
+command -v flock
 ```
 
-Levantar la base de datos si está detenida:
+*(Si `cron` no está activo: `sudo apt update && sudo apt install -y cron && sudo systemctl enable --now cron`).*
+
+Abrir el `crontab` de tu usuario:
 
 ```bash
-docker compose up -d bd
+crontab -e
 ```
 
-Comprobar su estado:
+**Prueba rápida (opcional, 1 minuto):** agrega esta línea, espera 2 minutos revisando `tail -f ~/respaldos/cron.log` y **luego bórrala o coméntala** para evitar respaldos simultáneos:
+
+```cron
+* * * * * $HOME/proyecto-eif431o/backups/respaldar.sh >> $HOME/respaldos/cron.log 2>&1
+```
+
+**Programación definitiva (todos los días a las 02:30):** deja únicamente esta línea (usa `flock` para evitar ejecuciones superpuestas):
+
+```cron
+30 2 * * * flock -n /tmp/respaldo.lock $HOME/proyecto-eif431o/backups/respaldar.sh >> $HOME/respaldos/cron.log 2>&1
+```
+
+Confirmar:
 
 ```bash
-docker compose ps
+crontab -l
 ```
 
-**Esperar hasta que `bd` aparezca en estado `healthy`.** Si se ejecuta el restaurador antes de que MariaDB termine de iniciar, la conexión puede fallar.
+---
 
-## 6. Restaurar la base de datos MariaDB
+## 4. Copia externa con SSH y `rsync` (desde Linux Mint)
 
-Volver a la raíz del proyecto y comprobar permisos:
+Linux Mint obtiene los respaldos desde Ubuntu Server con una clave SSH dedicada sin contraseña ni 2FA, así: si el servidor falla o es comprometido, las copias quedan a salvo fuera de él y `rsync` solo transfiere los cambios nuevos.
+
+*(Si en Ubuntu Server corriste algún respaldo con `sudo`, pásalos antes a tu usuario normal: `sudo rsync -a /root/respaldos/ ~/respaldos/ && sudo chown -R "$USER": ~/respaldos`).*
+
+En los comandos siguientes cambia `usuario_servidor` por tu usuario real en Ubuntu Server.
+
+### 4.1 Instalar dependencias (si faltan)
+
+En **Ubuntu Server**: `openssh-server` y `rsync` activos (`sudo apt install -y openssh-server rsync && sudo ufw allow ssh`).  
+En **Linux Mint**:
 
 ```bash
-cd ~/proyecto-eif431o
-chmod +x backups/restaurar.sh
+sudo apt update && sudo apt install -y openssh-client rsync
 ```
 
-Ejecutar usando **el nombre real** del archivo de respaldo seleccionado:
+### 4.2 Crear clave SSH dedicada en Linux Mint
+
+En una terminal local de **Linux Mint** (presiona **Enter dos veces** cuando pida passphrase):
 
 ```bash
-./backups/restaurar.sh ~/respaldos/NOMBRE-REAL-BD.sql.gz
+ssh-keygen -t ed25519 -f ~/.ssh/id_respaldos -C "respaldos"
+ls -l ~/.ssh/
 ```
 
-Ejemplo del respaldo empleado en una prueba del proyecto (úselo solo si ese archivo existe en su equipo):
+### 4.3 Copiar la clave pública a Ubuntu Server y probar
+
+Desde **Linux Mint**:
 
 ```bash
-./backups/restaurar.sh ~/respaldos/chamilo-bd-2026-10-31_0501.sql.gz
+ssh-copy-id -i ~/.ssh/id_respaldos.pub usuario_servidor@192.168.50.1
 ```
 
-El script descomprime el archivo `.sql.gz` e importa sus instrucciones a la base MariaDB mediante Docker Compose. Espere la confirmación de la restauración y revise cualquier mensaje de error.
+*(Pide contraseña y código 2FA esta única vez; debe mostrar `Number of key(s) added: 1`).*
 
-## 7. Verificar la base restaurada
-
-Desde el directorio Docker:
+Probar conexión sin contraseña ni código:
 
 ```bash
-cd ~/proyecto-eif431o/docker
+ssh -i ~/.ssh/id_respaldos usuario_servidor@192.168.50.1 hostname
+ssh -i ~/.ssh/id_respaldos usuario_servidor@192.168.50.1 "ls -lh ~/respaldos"
 ```
 
-Contar las tablas de la base `chamilo`:
+### 4.4 Traer los respaldos con `rsync`
+
+En **Linux Mint**, ejecuta el `rsync` **dos veces** para comprobar que la segunda no vuelve a copiar lo existente:
 
 ```bash
-docker compose exec bd sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='\''chamilo'\'';"'
-```
-
-En nuestra prueba de recuperación se obtuvieron **239 tablas**. El número puede ser diferente en otra instalación o después de cambios del sistema.
-
-Para verificar usuarios específicos, si existen en su respaldo:
-
-```bash
-docker compose exec bd sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" "$MARIADB_DATABASE" -e "SELECT id, username FROM user WHERE username IN ('\''respaldo_a'\'','\''respaldo_b'\'');"'
-```
-
-## 8. Restaurar los archivos persistentes de Chamilo
-
-Volver al proyecto y dar permisos:
-
-```bash
-cd ~/proyecto-eif431o
-chmod +x backups/restaurar-archivos.sh
-```
-
-Ejecutar con el respaldo de archivos **correspondiente al mismo momento** que la base restaurada:
-
-```bash
-./backups/restaurar-archivos.sh ~/respaldos/NOMBRE-REAL-ARCHIVOS.tar.gz
-```
-
-Ejemplo de la prueba (solo si el archivo existe):
-
-```bash
-./backups/restaurar-archivos.sh ~/respaldos/chamilo-archivos-2026-10-31_0501.tar.gz
-```
-
-Este script restaura el contenido del volumen Docker `chamilo_app`. Durante el proceso se pueden detener temporalmente servicios de la aplicación. No interrumpa la operación a mitad de la extracción.
-
-## 9. Encender y comprobar Chamilo
-
-```bash
-cd ~/proyecto-eif431o/docker
-docker compose up -d
-docker compose ps
-```
-
-Comprobar la respuesta del balanceador **desde el servidor principal**:
-
-```bash
-curl -I http://127.0.0.1:8081
-```
-
-Una respuesta `HTTP/1.1 200 OK` indica que el servicio web responde, pero **no demuestra por sí sola** que todos los registros y documentos estén correctos.
-
-En el navegador, entrar a la dirección configurada para el proyecto:
-
-```text
-https://capacitacion.losangeles.internal
-```
-
-Comprobar inicio de sesión, usuarios, cursos, documentos y funcionamiento general. El dominio necesita DNS y el proxy HTTPS correctamente configurados.
-
-## 10. Prueba real realizada: usuario A y usuario B
-
-La prueba de recuperación se realizó **en una máquina de pruebas**:
-
-1. Se creó el usuario `respaldo_a`.
-2. Se generó el par de respaldos de MariaDB y archivos.
-3. Se creó el usuario `respaldo_b` después del respaldo.
-4. Se simuló una pérdida de datos persistentes **solo en el entorno de pruebas**.
-5. Se restauró el respaldo generado antes de crear `respaldo_b`.
-
-Resultados comprobados:
-
-- Se recuperó `respaldo_a`.
-- `respaldo_b` no apareció después de restaurar.
-- Se recuperaron 239 tablas.
-- Chamilo volvió a responder HTTP 200.
-
-Esto mostró que la recuperación regresó al estado guardado cuando se creó el respaldo. **No repita la eliminación de volúmenes en el servidor definitivo.**
-
-## 11. Copia externa en Linux Mint
-
-En el proyecto se configuró una segunda copia mediante SSH y `rsync` hacia Linux Mint:
-
-```text
-Servidor de respaldos: 192.168.50.101
-Usuario: server
-Carpeta destino: ~/respaldos-losangeles/
-```
-
-Desde **Mint** se puede comprobar:
-
-```bash
+mkdir -p ~/respaldos-losangeles
+rsync -avz -e "ssh -i ~/.ssh/id_respaldos" usuario_servidor@192.168.50.1:respaldos/ ~/respaldos-losangeles/
 ls -lh ~/respaldos-losangeles/
 ```
 
-Si el servidor principal falla completamente, primero se debe reconstruir la infraestructura, copiar los archivos de respaldo disponibles desde Mint al nuevo servidor y después seguir la restauración de base y archivos.
+Repite:
 
-## 12. Problemas frecuentes
+```bash
+rsync -avz -e "ssh -i ~/.ssh/id_respaldos" usuario_servidor@192.168.50.1:respaldos/ ~/respaldos-losangeles/
+```
 
-**MariaDB no está lista:**
+### 4.5 Programar descarga automática con `rsync` en Cron (Linux Mint)
+
+En **Linux Mint**, verifica que `cron` esté activo (si no: `sudo apt update && sudo apt install -y cron && sudo systemctl enable --now cron`):
+
+```bash
+systemctl is-active cron
+crontab -e
+```
+
+**Para pruebas rápidas (cada 1 minuto):**
+
+```cron
+* * * * * flock -n /tmp/rsync-mint.lock rsync -az -e "ssh -i $HOME/.ssh/id_respaldos" usuario_servidor@192.168.50.1:respaldos/ $HOME/respaldos-losangeles/ >> $HOME/respaldos-losangeles/rsync.log 2>&1
+```
+
+**Para producción (diario a las 02:45, 15 min después del respaldo de Ubuntu):**
+
+```cron
+45 2 * * * flock -n /tmp/rsync-mint.lock rsync -az -e "ssh -i $HOME/.ssh/id_respaldos" usuario_servidor@192.168.50.1:respaldos/ $HOME/respaldos-losangeles/ >> $HOME/respaldos-losangeles/rsync.log 2>&1
+```
+
+Confirmar y revisar registros en **Linux Mint**:
+
+```bash
+crontab -l
+ls -lh ~/respaldos-losangeles/
+cat ~/respaldos-losangeles/rsync.log
+```
+
+*(Nota: `flock -n` evita que se encimen dos `rsync` si uno tarda; sin `--delete`, Mint conserva el histórico completo aunque Ubuntu limpie archivos mayores a 7 días).*
+
+---
+
+## 5. Restauración completa (Ubuntu Server)
+
+> **Si reconstruiste el servidor desde cero:** primero copia el par `.sql.gz` y `.tar.gz` desde **Linux Mint** al servidor:
+> ```bash
+> scp ~/respaldos-losangeles/NOMBRE-REAL-BD.sql.gz ~/respaldos-losangeles/NOMBRE-REAL-ARCHIVOS.tar.gz usuario_servidor@192.168.50.1:~/respaldos/
+> ```
+
+### 5.1 Levantar MariaDB y esperar estado `healthy`
+
+```bash
+cd ~/proyecto-eif431o/docker
+docker compose up -d bd
+docker compose ps
+```
+
+### 5.2 Restaurar base de datos y verificar tablas
+
+```bash
+cd ~/proyecto-eif431o
+./backups/restaurar.sh ~/respaldos/NOMBRE-REAL-BD.sql.gz
+```
+
+Contar tablas en `chamilo` (se esperan ~239):
+
+```bash
+cd ~/proyecto-eif431o/docker
+docker compose exec bd sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='\''chamilo'\'';"'
+```
+
+### 5.3 Restaurar archivos persistentes de Chamilo
+
+Usa el `.tar.gz` **de la misma fecha/hora** que el `.sql.gz` (este script reinicia los servicios al terminar):
+
+```bash
+cd ~/proyecto-eif431o
+./backups/restaurar-archivos.sh ~/respaldos/NOMBRE-REAL-ARCHIVOS.tar.gz
+```
+
+### 5.4 Comprobar Chamilo
 
 ```bash
 cd ~/proyecto-eif431o/docker
 docker compose ps
+curl -I http://127.0.0.1:8081
 ```
 
-Espere que el servicio `bd` muestre `healthy`.
+Debe responder `HTTP/1.1 200 OK` (o `302`). Verifica en el navegador de Mint: `https://capacitacion.losangeles.internal`.
 
-**No se encuentra el archivo:**
+---
 
-```bash
-ls -lh ~/respaldos/
-```
+## 6. Prueba rápida de recuperación (solo en máquina de pruebas)
 
-Utilice el nombre exacto del archivo existente.
+1. Crea el usuario `respaldo_a` en Chamilo y ejecuta `./backups/respaldar.sh`.
+2. Crea el usuario `respaldo_b` después del respaldo.
+3. Simula pérdida de datos: `cd ~/proyecto-eif431o/docker && docker compose down -v`.
+4. Restaura el par generado en el paso 1 (sección 5).
+5. Comprueba que `respaldo_a` existe y `respaldo_b` no:
+   ```bash
+   docker compose exec bd sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" "$MARIADB_DATABASE" -e "SELECT id, username FROM user WHERE username IN ('\''respaldo_a'\'','\''respaldo_b'\'');"'
+   ```
 
-**El archivo comprimido da error:** vuelva a comprobarlo con `gzip -t` o `tar -tzf`; busque otra copia válida si la compresión está dañada.
+---
 
-**Chamilo abre, pero faltan documentos:** compruebe que restauró el archivo `.tar.gz` correspondiente a la misma fecha del respaldo SQL.
+## 7. Problemas frecuentes
 
-**Chamilo no inicia:**
-
-```bash
-cd ~/proyecto-eif431o/docker
-docker compose ps
-docker compose logs --tail=50 chamilo
-```
-
-## 13. Conclusión
-
-El procedimiento comienza **creando los respaldos**, continúa **verificando su integridad** y, solamente si se necesita recuperar la plataforma, utiliza los scripts `restaurar.sh` y `restaurar-archivos.sh`.
-
-Los dos respaldos son complementarios: uno recupera los registros en MariaDB y el otro los archivos persistentes de Chamilo. Una restauración se considera completada después de verificar tanto los datos como el funcionamiento de la plataforma.
+- **`bd` no lista:** espera a que `docker compose ps` muestre `healthy`.
+- **`rsync` o `ssh` no conecta:** revisa `sudo systemctl status ssh` y `sudo ufw status` en `192.168.50.1`.
+- **Error `Permissions are too open` en Mint:** ejecuta `chmod 600 ~/.ssh/id_respaldos`.
+- **Faltan documentos al abrir Chamilo:** restauraste un `.tar.gz` de distinta fecha que el `.sql.gz`.
+- **Chamilo no levanta:** revisa `cd ~/proyecto-eif431o/docker && docker compose logs --tail=50 chamilo`.
