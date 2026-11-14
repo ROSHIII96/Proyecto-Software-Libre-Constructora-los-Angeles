@@ -50,6 +50,14 @@ tar -tzf ~/respaldos/NOMBRE-REAL-ARCHIVOS.tar.gz > /dev/null && echo "ARCHIVOS O
 
 ## 3. Automatizar respaldos con Cron (Ubuntu Server)
 
+Asegurar la zona horaria correcta en Ubuntu Server (por defecto viene en UTC y correría el `cron` 6 horas antes):
+
+```bash
+sudo timedatectl set-timezone America/Costa_Rica
+sudo systemctl restart cron
+timedatectl
+```
+
 Verificar `cron` y `flock`:
 
 ```bash
